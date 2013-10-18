@@ -82,6 +82,7 @@ class Pico {
 		Twig_Autoloader::register();
 		// Overrides the default theme (Meta Theme)
 		$theme = ((!empty($meta['theme'])) ? $meta['theme'] : $settings['theme']);
+		$siteIndex = ((!empty($meta['templatefile'])) ? $meta['templatefile'] : 'index.html');
 		$loader = new Twig_Loader_Filesystem(THEMES_DIR . $theme);
 		$twig = new Twig_Environment($loader, $settings['twig_config']);
 		$twig->addExtension(new Twig_Extension_Debug());
@@ -101,9 +102,14 @@ class Pico {
 			'next_page' => $next_page,
 			'is_front_page' => $url ? false : true,
 		);
-		$this->run_hooks('before_render', array(&$twig_vars, &$twig));
-		$output = $twig->render('index.html', $twig_vars);
-		$this->run_hooks('after_render', array(&$output));
+		if (file_exists($twig_vars['theme_dir'] . '/' . $siteIndex))
+		{
+			$this->run_hooks('before_render', array(&$twig_vars, &$twig));
+			$output = $twig->render($siteIndex, $twig_vars);
+			$this->run_hooks('after_render', array(&$output));
+		} else {
+			$output = 'File not found: ' . $siteIndex;
+		}
 		echo $output;
 	}
 	
@@ -157,7 +163,9 @@ class Pico {
 			'author' 		=> 'Author',
 			'date' 			=> 'Date',
 			'robots'     	=> 'Robots',
-			'theme'			=> 'Theme'
+			'theme'			=> 'Theme',
+			'templatefile'	=> 'ThemeFile',
+			
 		);
 
 		// Add support for custom headers by hooking into the headers array
@@ -240,6 +248,7 @@ class Pico {
 			$data = array(
 				'title' => isset($page_meta['title']) ? $page_meta['title'] : '',
 				'theme' => isset($page_meta['theme']) ? $page_meta['theme'] : '',
+				'templatefile' => isset($page_meta['templatefile']) ? $page_meta['templatefile'] : '',
 				'url' => $url,
 				'author' => isset($page_meta['author']) ? $page_meta['author'] : '',
 				'date' => isset($page_meta['date']) ? $page_meta['date'] : '',
